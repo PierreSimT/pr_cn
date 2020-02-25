@@ -18,7 +18,7 @@ int main(int argc, char **argv) {
 
     MPI_Comm_rank( MPI_COMM_WORLD, &rank );
     MPI_Get_processor_name(my_name, &my_name_length);
-    printf("\nProcesador: %s", my_name);
+    printf("\nProcesador: %s %d", my_name, rank);
     fflush(stdout);
     MPI_Barrier(MPI_COMM_WORLD);
     if (rank == 0)
@@ -65,7 +65,7 @@ int main(int argc, char **argv) {
             double rate;
             if (tmin > 0) rate = n * sizeof(double) * 1.0e-6 /tmin;
             else          rate = 0.0;
-            printf( "Send/Recv\t%d\t%f\t%f\n", n, tmin, rate );
+            printf( "Send/Recv\t%d\t%f\t%f\t\n", n, tmin, rate );
         }
         free( buf );
     }
