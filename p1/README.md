@@ -1,13 +1,19 @@
 ﻿# Computación en la Nube
 
+* **Nombre**: Pierre Simon Callist Yannick Tondreau
+* **Repositorio Git**: [https://github.com/PierreSimT/pr_cn/tree/master/p1](https://github.com/PierreSimT/pr_cn/tree/master/p1)
+* **Máster Ingeniería Informática - Universidad de La Laguna**
+
 Antes de realizar los ejercicios que están expuestos en la práctica se muestra el procesador sobre el cual se ejecutará los programas.
-[![https://imgur.com/VBxtIsY.png](https://imgur.com/VBxtIsY.png)](https://imgur.com/VBxtIsY.png)
+
+![cpu](https://imgur.com/VBxtIsY.png)
 
 ## Ejercicio 1
 
 **Analiza el programa hello.c y realiza las siguientes ejecuciones comprobando en cada caso el resultado obtenido.**
 
 ```c++
+// hello.c
 #include  <stdio.h>
 #include  "mpi/mpi.h"
 
@@ -65,6 +71,7 @@ Hello world from process 3 of 4 in ptondreau
 **Analiza y compila el programa helloms.**
 
 ```c++
+// helloms.c
 #include  <stdio.h>
 #include  <string.h>
 #include  "mpi/mpi.h"
@@ -100,8 +107,8 @@ El programa `helloms.c` realiza lo siguiente:
 
 1. Inicia las variables
 2. Si el procesador es el procesador 0:
-   - Almacena el mensaje `Hello, world` en la variables `message`.
-   - Se envía el mensaje a cada procesador que esté disponible para el programa
+   * Almacena el mensaje `Hello, world` en la variables `message`.
+   * Se envía el mensaje a cada procesador que esté disponible para el programa
 3. En caso de no ser el procesador 0, espera para la recepción del mensaje
 4. Muestra el mensaje en pantalla
 
@@ -132,6 +139,7 @@ node 1 : Hello, world
 Para realizar este ejercicio se usará el programa `helloms.c` como punto de partida y se modificará para cumplir lo que pide el ejercicio. El programa reescrito es el siguiente:
 
 ```c++
+// helloms_ex.c
 #include  <stdio.h>
 #include  <string.h>
 #include  "mpi/mpi.h"
@@ -185,7 +193,81 @@ node 0 : Hello, world
 
 **Escribe un programa que haga circular un token en un anillo**
 
-TODO
+```c++
+// token_ring.c
+#include "mpi/mpi.h"
+#include <stdio.h>
+#include <string.h>
+
+int main(int argc, char **argv) {
+  int rank, size, tag, rc, i;
+  MPI_Status status;
+  char message[20];
+
+  rc = MPI_Init(&argc, &argv);
+  rc = MPI_Comm_size(MPI_COMM_WORLD, &size);
+  rc = MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  tag = 100;
+
+  if (size > 1) {
+    if (rank == 0) {
+      printf("Numero de procesadores a recorrer: %d\n", size);
+      strcpy(message, "Hello, world");
+
+      for (i = 1; i < size; i++) {
+        rc = MPI_Send(message, 13, MPI_CHAR, i, tag, MPI_COMM_WORLD);
+      }
+
+      printf("Maestro esperando que mensaje recorra el anillo\n");
+      rc = MPI_Recv(message, 13, MPI_CHAR, size - 1, tag, MPI_COMM_WORLD,
+                    &status);
+
+      printf("node %d : %.13s\n", rank, message);
+
+    } else {
+
+      // Reciben mensaje por parte del procesador anterior
+      rc = MPI_Recv(message, 13, MPI_CHAR, rank - 1, tag, MPI_COMM_WORLD,
+                    &status);
+      printf("Node %d ha recibido el mensaje : %.13s\n", rank, message);
+
+      // Reenvia el mensaje al rango superior o al maestro
+      if ((rank + 1) >= size) {
+        rc = MPI_Send(message, 13, MPI_CHAR, 0, tag, MPI_COMM_WORLD);
+      } else {
+        rc = MPI_Send(message, 13, MPI_CHAR, rank + 1, tag, MPI_COMM_WORLD);
+      }
+    }
+  } else {
+    printf("Numero de procesadores insuficiente\n");
+  }
+
+  rc = MPI_Finalize();
+}
+```
+
+### Resultado
+
+Al ejecutar el programa con 4 procesadores la salida es la siguiente:
+
+```verbatim
+> mpirun -np 4 token.run 
+Numero de procesadores a recorrer: 4
+Maestro esperando que mensaje recorra el anillo
+Node 1 ha recibido el mensaje : Hello, world
+Node 2 ha recibido el mensaje : Hello, world
+Node 3 ha recibido el mensaje : Hello, world
+node 0 : Hello, world
+```
+
+En cambio, si realizamos la ejecución con un solo procesador la salida es la siguiente:
+
+```verbatim
+> mpirun -np 1 token.run 
+Numero de procesadores insuficiente
+```
+
+
 
 ## Ejercicio 5
 
@@ -194,6 +276,7 @@ TODO
 ### Programa `prod.c`
 
 ```c++
+// prod.c
 #include  "mpi/mpi.h"
 #include  <stdio.h>
 #include  <math.h>
@@ -246,6 +329,7 @@ wall clock time = 2.354768, Prod time: 0.0000000023547679, x = 1000000000.000000
 ### Programa `ptop.c`
 
 ```c++
+// ptop.c
 #include  <stdio.h>
 #include  <stdlib.h>
 #include  "mpi/mpi.h"
@@ -327,33 +411,72 @@ El programa `ptop.c` realizará la comunicación de paso de mensajes etre dos pr
 
 ### Resultado
 
-La ejecución del programa se realiza con dos procesadores y su salida es la siguiente:
+La ejecución del programa se realiza con dos procesadores y la salida es la siguiente. A continuación se muestra el cálculo de la Regresión Lineal mediante LibreOffice Calc. 
 
 ```verbatim
-> mpirun -np 2 ptop.run
+> mpirun -np 2 ptop.run 
 
 Procesador: ptondreau 1
 Procesador: ptondreau 0
-Kind		n	time (sec)	MB / sec
-Send/Recv	1	0.000001	9.581883
-Send/Recv	2	0.000001	19.508626
-Send/Recv	4	0.000001	39.152256
-Send/Recv	8	0.000001	69.070612
-Send/Recv	16	0.000001	133.631940
-Send/Recv	32	0.000001	252.662411
-Send/Recv	64	0.000001	420.108305
-Send/Recv	128	0.000002	579.396187
-Send/Recv	256	0.000002	921.208461
-Send/Recv	512	0.000006	642.358651
-Send/Recv	1024	0.000008	1067.083498
-Send/Recv	2048	0.000010	1609.035095
-Send/Recv	4096	0.000014	2403.403262
-Send/Recv	8192	0.000021	3077.529919
-Send/Recv	16384	0.000036	3632.564268
-Send/Recv	32768	0.000065	4010.126898
-Send/Recv	65536	0.000124	4239.942746
-Send/Recv	131072	0.000238	4413.737370
-Send/Recv	262144	0.000474	4425.239551
-Send/Recv	524288	0.001021	4106.967287
-Send/Recv	1048576	0.002206	3802.968122
+Kind            n       time (sec)      MB / sec
+Send/Recv       1       0.000000        36.824105
+Send/Recv       2       0.000000        71.458239
+Send/Recv       4       0.000000        146.396808
+Send/Recv       8       0.000000        269.696254
+Send/Recv       16      0.000000        520.001311
+Send/Recv       32      0.000000        1087.197754
+Send/Recv       64      0.000000        1593.360991
+Send/Recv       128     0.000000        2786.936206
+Send/Recv       256     0.000000        4129.032232
+Send/Recv       512     0.000002        2197.424878
+Send/Recv       1024    0.000002        3562.513573
+Send/Recv       2048    0.000003        5500.755428
+Send/Recv       4096    0.000004        7801.904803
+Send/Recv       8192    0.000007        9640.482554
+Send/Recv       16384   0.000012        11015.842315
+Send/Recv       32768   0.000022        11965.401555
+Send/Recv       65536   0.000042        12524.647339
+Send/Recv       131072  0.000082        12792.504389
+Send/Recv       262144  0.000153        13714.181087
+Send/Recv       524288  0.000393        10674.145323
+Send/Recv       1048576 0.000996        8421.388254
 ```
+
+| Regression                   	|                   	|                   	|                   	|                   	|                   	|                   	|
+|------------------------------	|-------------------	|-------------------	|-------------------	|-------------------	|-------------------	|-------------------	|
+| Regression Model             	| Linear            	|                   	|                   	|                   	|                   	|                   	|
+|                              	|                   	|                   	|                   	|                   	|                   	|                   	|
+| Regression Statistics        	|                   	|                   	|                   	|                   	|                   	|                   	|
+| R^2                          	| 0,211455422423316 	|                   	|                   	|                   	|                   	|                   	|
+| Standard Error               	| 4145,21996879016  	|                   	|                   	|                   	|                   	|                   	|
+| Count of X variables         	| 1                 	|                   	|                   	|                   	|                   	|                   	|
+| Observations                 	| 21                	|                   	|                   	|                   	|                   	|                   	|
+| Adjusted R^2                 	| 0,169953076235069 	|                   	|                   	|                   	|                   	|                   	|
+|                              	|                   	|                   	|                   	|                   	|                   	|                   	|
+| Confidence level             	| 0,95              	|                   	|                   	|                   	|                   	|                   	|
+|                              	|                   	|                   	|                   	|                   	|                   	|                   	|
+|                              	| Coefficients      	| Standard Error    	| t-Statistic       	| P-value           	| Lower 95%         	| Upper 95%         	|
+| Intercept                    	| 4180,92407119641  	| 977,037638832536  	| 4,27918424534003  	| 0,000405145539266 	| 2135,96079105761  	| 6225,8873513352   	|
+| X1                           	| 0,008346891134151 	| 0,003697870179035 	| 2,25721583777446  	| 0,035961579718495 	| 0,000607159899352 	| 0,016086622368949 	|
+|                              	|                   	|                   	|                   	|                   	|                   	|                   	|
+| X1                           	| Predicted Y       	| Y                 	| Residual          	|                   	|                   	|                   	|
+| 1                            	| 4180,93241808754  	| 46,224605         	| -4134,70781308754 	|                   	|                   	|                   	|
+| 2                            	| 4180,94076497868  	| 89,856847         	| -4091,08391797868 	|                   	|                   	|                   	|
+| 4                            	| 4180,95745876094  	| 147,335077        	| -4033,62238176094 	|                   	|                   	|                   	|
+| 8                            	| 4180,99084632548  	| 270,22006         	| -3910,77078632548 	|                   	|                   	|                   	|
+| 16                           	| 4181,05762145455  	| 520,035388        	| -3661,02223345455 	|                   	|                   	|                   	|
+| 32                           	| 4181,1911717127   	| 898,703363        	| -3282,4878087127  	|                   	|                   	|                   	|
+| 64                           	| 4181,45827222899  	| 1236,81455        	| -2944,64372222899 	|                   	|                   	|                   	|
+| 128                          	| 4181,99247326158  	| 2178,392273       	| -2003,60020026158 	|                   	|                   	|                   	|
+| 256                          	| 4183,06087532675  	| 3348,229027       	| -834,83184832675  	|                   	|                   	|                   	|
+| 512                          	| 4185,19767945709  	| 1740,756471       	| -2444,44120845709 	|                   	|                   	|                   	|
+| 1024                         	| 4189,47128771778  	| 2847,410455       	| -1342,06083271778 	|                   	|                   	|                   	|
+| 2048                         	| 4198,01850423915  	| 4552,375629       	| 354,357124760852  	|                   	|                   	|                   	|
+| 4096                         	| 4215,11293728189  	| 6242,712935       	| 2027,59999771811  	|                   	|                   	|                   	|
+| 8192                         	| 4249,30180336737  	| 7624,01113        	| 3374,70932663263  	|                   	|                   	|                   	|
+| 16384                        	| 4317,67953553833  	| 8475,39603        	| 4157,71649446167  	|                   	|                   	|                   	|
+| 32768                        	| 4454,43499988026  	| 9624,201473       	| 5169,76647311974  	|                   	|                   	|                   	|
+| 65536                        	| 4727,94592856411  	| 10150,489331      	| 5422,54340243589  	|                   	|                   	|                   	|
+| 131072                       	| 5274,96778593182  	| 13006,723069      	| 7731,75528306818  	|                   	|                   	|                   	|
+| 262144                       	| 6369,01150066723  	| 13162,193283      	| 6793,18178233277  	|                   	|                   	|                   	|
+![chart result](https://imgur.com/qbXhd9q.png)
