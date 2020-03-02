@@ -17,9 +17,7 @@ int main(int argc, char **argv) {
       printf("Numero de procesadores a recorrer: %d\n", size);
       strcpy(message, "Hello, world");
 
-      for (i = 1; i < size; i++) {
-        rc = MPI_Send(message, 13, MPI_CHAR, i, tag, MPI_COMM_WORLD);
-      }
+      rc = MPI_Send(message, 13, MPI_CHAR, 1, tag, MPI_COMM_WORLD);
 
       printf("Maestro esperando que mensaje recorra el anillo\n");
       rc = MPI_Recv(message, 13, MPI_CHAR, size - 1, tag, MPI_COMM_WORLD,
