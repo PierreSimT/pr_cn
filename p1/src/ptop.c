@@ -24,7 +24,7 @@ int main(int argc, char **argv) {
     if (rank == 0)
         printf( "\nKind\t\tn\ttime (sec)\tMB / sec\n" );
 
-    for (n = 1; n < 1100000; n*=2) {
+    for (n = 1; n < 34000000; n*=2) { // 1100000
         if (n == 0) nloop = 1000;
         else        nloop = 1000 / n;
         if (nloop < 1) nloop = 1;
