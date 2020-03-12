@@ -1,0 +1,27 @@
+- name: Build OpenMPI Cluster
+  hosts: backend
+  tasks:
+    - name: Update CentOS Systems
+      yum: 
+        name: '*'
+        state: latest
+    - name: Install Development Tools
+      yum:
+        name: "@Development tools"
+        state: present
+    - name: Install OpenMPI
+      yum:
+        name: 'openmpi3-devel'
+        state: latest
+    - name: Install NFS
+      yum:
+        name: 'nfs-utils'
+        state: latest
+    - name: Creating directory
+      command: mkdir -p /mnt/nfs
+    - name: Load NFS volume
+      command: mount 192.168.210.100:/mnt/nfs /mnt/nfs
+    - name: Update PATH
+      copy:
+        dest: /etc/profile.d/custom-path.sh
+        content: 'PATH=$PATH:/usr/lib64/openmpi3/bin/'

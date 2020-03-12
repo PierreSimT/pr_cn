@@ -1,0 +1,15 @@
+---
+ansible_user: USER
+ansible_become: true
+ansible_become_method: sudo
+ansible_become_user: root
+
+docker_image_backend: BACKEND_IMAGE
+frontend_container_port: FRONTEND_IMAGE
+frontend_container_port: "PORT:PORT"
+backend_container_port: "PORT:PORT"
+
+frontend_server: FRONTEND_IP
+backend_server: BACKEND_IP
+frontend_port: PORT
+backend_port: PORT

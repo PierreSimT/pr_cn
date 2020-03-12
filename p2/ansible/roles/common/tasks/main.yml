@@ -1,0 +1,12 @@
+---
+- name: Update CentOS Systems
+  yum: 
+    name: '*'
+    state: latest
+  when: ansible_facts['distribution'] == "CentOS"
+
+- name: Update Debian Systems
+  apt:
+    name: '*'
+    state: latest
+  when: ansible_facts['os_family'] == "Debian"

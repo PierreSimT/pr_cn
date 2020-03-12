@@ -1,0 +1,39 @@
+nginx_http_template_enable: true
+nginx_http_template:
+  default:
+    template_file: http/default.conf.j2
+    conf_file_name: default.conf
+    conf_file_location: /etc/nginx/conf.d/
+    servers:
+      server1:
+        listen:
+          listen_localhost:
+            # ip: 0.0.0.0
+            port: 80
+            opts:
+              - default_server
+        reverse_proxy:
+          locations:
+            frontend:
+              location: /
+              proxy_pass: http://frontend_server
+            backend:
+              location: /api
+              proxy_pass: http://backend_server
+    upstreams:
+      upstream_1:
+        name: frontend_server
+        lb_method: least_conn
+        sticky_cookie: false
+        servers:
+          frontend_server_1:
+            address: "{{ frontend_server }}"
+            port: "{{ frontend_port }}"
+      upstream_2:
+        name: backend_server
+        lb_method: least_conn
+        sticky_cookie: false
+        servers:
+          backend_server_1:
+            address: "{{ backend_server }}"
+            port: "{{ backend_port }}"

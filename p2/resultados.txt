@@ -1,0 +1,36 @@
+PTOP
+--------------------
+mpirun -np 2 --hostfile hosts ptop.run
+
+Procesador: master 0
+Procesador: slave-1 1
+Kind	n	time (sec)	MB / sec
+Send/Recv	1	0.000077	0.103492	
+Send/Recv	2	0.000083	0.192134	
+Send/Recv	4	0.000083	0.384610	
+Send/Recv	8	0.000071	0.901309	
+Send/Recv	16	0.000075	1.697554	
+Send/Recv	32	0.000079	3.239210	
+Send/Recv	64	0.000085	6.006419	
+Send/Recv	128	0.000098	10.496266	
+Send/Recv	256	0.000146	14.004680	
+Send/Recv	512	0.000147	27.958186	
+Send/Recv	1024	0.000189	43.285972	
+Send/Recv	2048	0.000268	61.207640	
+Send/Recv	4096	0.000543	60.327560	
+Send/Recv	8192	0.000860	76.212051	
+Send/Recv	16384	0.001317	99.524783	
+Send/Recv	32768	0.002639	99.317510	
+Send/Recv	65536	0.004870	107.653015	
+Send/Recv	131072	0.009342	112.248796	
+Send/Recv	262144	0.018384	114.072775	
+Send/Recv	524288	0.036383	115.282007	
+Send/Recv	1048576	0.072293	116.036137	
+
+PROD
+--------------------
+
+mpirun -np 1 --hostfile hosts prod.run 
+Process 0 of 1 on master
+wall clock time = 3.621597, Prod time: 0.0000000036215965, x = 1000000000.000000
+
