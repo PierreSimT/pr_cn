@@ -79,3 +79,15 @@ Aún así, obteniendo la gráfica de `N/Tiempo (sec)` se obtiene una regresión 
 
 ![tiempo](https://imgur.com/xBuMK3y.png)
 
+Una vez calculada la regresión lineal, obtenemos los datos del regresor que se ha creado en Python:
+
+```verbatim
+Coeficientes: 
+ [6.88993213e-08]
+Mean squared error: 1.1683436424267604e-08
+Coeficiente de determinacion: 0.9999588707962632
+```
+
+Y la recta vendrá dada por la siguiente función:
+
+![funcion recta](https://i.imgur.com/GxPD7mv.png)

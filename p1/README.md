@@ -525,7 +525,7 @@ plt.ylabel('MB / sec')
 plt.show()
 ```
 
-![tiempos vs mb/sec](https://imgur.com/GYE7kAe.png)
+![n vs mb/s](https://imgur.com/GYE7kAe.png)
 
 ```python
 # Importing the libraries
@@ -555,4 +555,18 @@ plt.ylabel('tiempo (sec)')
 plt.show()
 ```
 
-![tiempos vs mb/sec](https://imgur.com/OglPqTw.png)
+![n vs tiempo](https://imgur.com/OglPqTw.png)
+
+Una vez calculada la regresión lineal, obtenemos los datos del regresor que se ha creado en Python:
+
+```verbatim
+Coeficientes: 
+ [1.08064483e-09]
+Mean squared error: 3.701446198421593e-09
+Coeficiente de determinacion: 0.9999379475591803
+```
+
+Y la recta vendrá dada por la siguiente función:
+
+![funcion recta](https://i.imgur.com/cByttT0.png)
+
