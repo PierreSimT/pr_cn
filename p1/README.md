@@ -1,4 +1,4 @@
-﻿# Computación en la Nube
+﻿# Práctica 1 - Computación en la Nube
 
 - **Nombre**: Pierre Simon Callist Yannick Tondreau
 - **Repositorio Git**: [https://github.com/PierreSimT/pr_cn/tree/master/p1](https://github.com/PierreSimT/pr_cn/tree/master/p1)
@@ -570,3 +570,10 @@ Y la recta vendrá dada por la siguiente función:
 
 ![funcion recta](https://i.imgur.com/cByttT0.png)
 
+### Conclusión
+
+El coste de realizar un operación aritmética es de `0.0000000026496585` segundos, mientras que el coste de realizar la comunicación es de  `0.000000` (no computable para un sólo dato) segundos para un dato de tipo `double`. 
+
+Por lo tanto, la conclusión que podemos sacar de esto es que realizar comunicaciones dentro del mismo procesador de core a core, se realizan muy rápidamente y su impacto en un programa puede ser mínimo. En cambio, cuando el número de datos aumenta, el coste de la comunicación comienza a ser mayor y puede empezar a notarse en la ejecución del programa.
+
+De esta forma, se deberá tener en cuenta el número de datos que se enviarán en la comunicación dado que, dependiendo del problema, enviar un número mayor de datos permite reducir el costo de las comunicaciones ya que permite realizar operaciones sobre un rango mayor de datos.

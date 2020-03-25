@@ -1,4 +1,4 @@
-# Computación en la Nube
+# Práctica 2 - Computación en la Nube
 
 - **Nombre**: Pierre Simon Callist Yannick Tondreau
 - **Repositorio Git**: [https://github.com/PierreSimT/pr_cn/tree/master/p2](https://github.com/PierreSimT/pr_cn/tree/master/p2)
@@ -91,3 +91,11 @@ Coeficiente de determinacion: 0.9999588707962632
 Y la recta vendrá dada por la siguiente función:
 
 ![funcion recta](https://i.imgur.com/GxPD7mv.png)
+
+### Conclusión
+
+El coste de realizar un operación aritmética es de `0.0000000036215965` segundos, mientras que el coste de realizar la comunicación a través de la red es de  `0.000077` segundos para un dato de tipo `double`. 
+
+Por lo tanto, la conclusión que podemos sacar de esto es que el costo de realizar comunicaciones puede ser mayor al de realizar una operación, en este caso una operación aritmética. 
+
+De esta forma, se deberá tener en cuenta el número de datos que se enviarán en la comunicación dado que, dependiendo del problema, enviar un número mayor de datos permite reducir el costo de las comunicaciones ya que permite realizar operaciones sobre un rango mayor de datos.
