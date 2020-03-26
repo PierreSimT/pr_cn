@@ -47,6 +47,7 @@ int main(int argc, char **argv)
         return -1;
     }
 
+    int elements_per_proc;
     int rank, size, tag, rc, i;
     double startwtime, endwtime, prodtime;
     MPI_Status status;
@@ -57,24 +58,41 @@ int main(int argc, char **argv)
     rc = MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     tag = 100;
 
-    Mat *img;
+    Mat *img = new Mat();
     Mat *result;
     vector<uchar> *sub_result;
     vector<uchar> *sub_img;
 
-    img = new Mat(imread(argv[1], IMREAD_GRAYSCALE));
-    if (!img->data)
-        exit(-1);
+    if (rank == 0)
+    {
+        img = new Mat(imread(argv[1], IMREAD_GRAYSCALE));
+        if (!img->data)
+            exit(-1);
 
-    result = new Mat(img->rows, img->cols, CV_8UC1);
+        result = new Mat(img->rows, img->cols, CV_8UC1);
 
-    int elements_per_proc = img->total() / size;
+        elements_per_proc = img->total() / size;
+
+        for (int i = 1; i < size; i++ )
+            rc = MPI_Send(&elements_per_proc, 1, MPI_INT, i, tag, MPI_COMM_WORLD);
+
+    } else {
+
+        rc = MPI_Recv(&elements_per_proc, 1, MPI_INT, 0, tag, MPI_COMM_WORLD, &status);
+
+    }
+
+    std::cout << "Elementos por proceso: " << elements_per_proc << std::endl;
 
     sub_img = new vector<uchar>(elements_per_proc);
     sub_result = new vector<uchar>(elements_per_proc);
 
     startwtime = MPI_Wtime();
-    MPI_Scatter(img->data, elements_per_proc, MPI_BYTE, sub_img->data(), elements_per_proc, MPI_BYTE, 0, MPI_COMM_WORLD);
+
+    if ( rank == 0)
+        MPI_Scatter(img->data, elements_per_proc, MPI_BYTE, sub_img->data(), elements_per_proc, MPI_BYTE, 0, MPI_COMM_WORLD);
+    else 
+        MPI_Scatter(NULL, 0, NULL, sub_img->data(), elements_per_proc, MPI_BYTE, 0, MPI_COMM_WORLD);
 
     Mat *aux_img = new Mat(*sub_img);
     Mat *aux_result = new Mat(*sub_result);
@@ -82,8 +100,11 @@ int main(int argc, char **argv)
     gaussBlur(aux_img, aux_result, atof(argv[2]));
 
     MPI_Barrier(MPI_COMM_WORLD);
+    if ( rank == 0)
+        MPI_Gather(aux_result->data, elements_per_proc, MPI_BYTE, result->data, elements_per_proc, MPI_BYTE, 0, MPI_COMM_WORLD);
+    else 
+        MPI_Gather(aux_result->data, elements_per_proc, MPI_BYTE, NULL, 0, NULL, 0, MPI_COMM_WORLD);
 
-    MPI_Gather(aux_result->data, elements_per_proc, MPI_BYTE, result->data, elements_per_proc, MPI_BYTE, 0, MPI_COMM_WORLD);
     endwtime = MPI_Wtime();
 
     if (rank == 0)
