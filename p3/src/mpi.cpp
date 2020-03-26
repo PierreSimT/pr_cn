@@ -81,9 +81,7 @@ int main(int argc, char **argv)
         rc = MPI_Recv(&elements_per_proc, 1, MPI_INT, 0, tag, MPI_COMM_WORLD, &status);
 
     }
-
-    std::cout << "Elementos por proceso: " << elements_per_proc << std::endl;
-
+    
     sub_img = new vector<uchar>(elements_per_proc);
     sub_result = new vector<uchar>(elements_per_proc);
 
