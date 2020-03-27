@@ -1,0 +1,197 @@
+#include <cmath>
+#include <chrono>
+#include <stdio.h>
+#include <fstream>
+#include <iostream>
+#include <CL/cl.hpp>
+#include <sys/stat.h>
+#include <opencv2/opencv.hpp>
+
+using namespace cv;
+
+char* readCLSource(const char* shaderFile)
+{
+    struct stat statBuf;
+    stat(shaderFile, &statBuf);
+
+    std::ifstream f(shaderFile);
+    
+    if (!f)
+        return 0;
+    
+    char *buf = (char*) new char[statBuf.st_size + 1];
+    f.read(buf, statBuf.st_size);
+    buf[statBuf.st_size] = '\0';
+    
+    //std::cout << std::string(buf, statBuf.st_size) << std::endl;
+
+    return buf;
+}
+
+int main(int argc, char **argv)
+{
+    if (argc != 3)
+    {
+        printf("uso: a.out <Image_Path> <Gauss_Radius>\n");
+        return -1;
+    }
+
+    // --------------- INICIALIZACION DE OPENCL ------------------
+
+    // Handlers
+    cl_context context;
+    cl_device_id deviceIds[1];
+    cl_command_queue commands;
+    cl_program program;
+    cl_kernel kernel;
+
+    cl_platform_id platform_id;
+    cl_uint num_platforms;
+
+    // Comprobamos si existe algun driver de OpenCL 
+    cl_int err = clGetPlatformIDs(1, &platform_id, &num_platforms );
+
+    if ( err != CL_SUCCESS ) {
+        printf("Error al obtener implementacion de OpenCL");
+        return -1;
+    }
+
+    // Obtenemos la GPU en la cual se puede ejecutar
+    err = clGetDeviceIDs(platform_id, CL_DEVICE_TYPE_GPU, 1, deviceIds, NULL);
+
+    if ( err != CL_SUCCESS ) {
+        printf("No existe dispositivo compatible de tipo GPU para OpenCL");
+        return -1;
+    } else {
+        
+    }
+
+    context = clCreateContext(0, 1, &deviceIds[0], NULL, NULL, &err);
+
+    if ( !context ) {
+        printf("No se ha podido crear el contexto");
+        return -1;
+    }
+
+    commands = clCreateCommandQueue(context, deviceIds[0], 0, &err);
+
+    if ( !commands ) {
+        printf("Error de creacion de contexto");
+        return -1;
+    }
+
+    char *program_source = readCLSource("/home/ptondreau/Documents/pr_cn/p4/src/clProgram.cl");
+
+    program = clCreateProgramWithSource(context, 1, (const char**) &program_source, NULL, NULL);
+
+    if (!program) {
+        printf("Error al crear programa desde fuente");
+    }
+
+    err = clBuildProgram(program, 1,  deviceIds, NULL, NULL, NULL);
+
+    if (err != CL_SUCCESS) {
+        size_t len;
+        char buffer[2048];
+
+        std::cout << "Error: Failed to build program executable! : " << std::endl;
+        
+        clGetProgramBuildInfo(program, deviceIds[0], CL_PROGRAM_BUILD_LOG, sizeof(buffer), buffer, &len);
+        std::cout << std::string(buffer, len) << std::endl;
+        exit(1);
+    } else {
+        printf("Programa compilado correctamente\n");
+    }
+
+    kernel = clCreateKernel(program, "gaussBlur", &err);
+
+    if (!kernel || err != CL_SUCCESS) {
+        std::cout << "Error: Failed to create compute kernel" << std::endl;
+        exit(1);
+    } else {
+        printf("Kernel creado correctamente\n");
+    }
+
+
+    // --------------- PREPARACION DATOS PARA OPENCL ------------------
+
+    float radius = atof(argv[2]);
+    Mat img = imread(argv[1], CV_LOAD_IMAGE_GRAYSCALE);
+    Mat *resultCPU = new Mat(img.rows, img.cols, CV_8UC1);
+
+    // BUFFERS
+    cl_mem sourceGPU;
+    cl_mem resultGPU;
+
+    sourceGPU = clCreateBuffer(context, CL_MEM_READ_WRITE, img.total() * sizeof(uchar), NULL, NULL);
+    resultGPU = clCreateBuffer(context, CL_MEM_READ_WRITE, img.total() * sizeof(uchar), NULL, NULL);
+
+    err = clEnqueueWriteBuffer(commands, sourceGPU, CL_TRUE, 0, img.total() * sizeof(uchar), img.data, 0, NULL, NULL);
+
+    if ( err != CL_SUCCESS ) {
+        printf("Error al copiar datos de la imagen\n");
+        return -1;
+    }
+
+    // --------------- ESTABLECER PARAMETROS PARA OPENCL ------------------
+
+    cl_uint num_filas = img.rows;
+    cl_uint num_columnas = img.cols;
+    cl_float cl_radius = radius;
+
+    err |= clSetKernelArg(kernel, 0, sizeof(cl_mem), &sourceGPU);
+    err |= clSetKernelArg(kernel, 1, sizeof(cl_mem), &resultGPU);
+    err |= clSetKernelArg(kernel, 2, sizeof(cl_uint), &num_filas);
+    err |= clSetKernelArg(kernel, 3, sizeof(cl_uint), &num_columnas);
+    err |= clSetKernelArg(kernel, 4, sizeof(cl_float), &cl_radius);
+
+    if ( err != CL_SUCCESS ) {
+        printf("Error al establecer los parametros\n");
+        return -1;
+    } else {
+        printf("Argumentos establecidos\n");
+    }
+
+    // --------------- EJECUCION KERNEL OPENCL ------------------
+
+    cl_uint dim = 1;
+    size_t local = 1;
+    size_t global = img.rows;
+
+    std::cout << "Ejecutando filtro Gaussiano..." << std::endl;
+
+    auto t1 = std::chrono::high_resolution_clock::now();
+    err = clEnqueueNDRangeKernel(commands, kernel, dim, NULL, &global, &local, 0, NULL, NULL);
+    
+    if ( err != CL_SUCCESS ) {
+        printf("Error al ejecutar el kernel\n");
+        return -1;
+    }
+
+    clFinish(commands);
+
+    err = clEnqueueReadBuffer(commands, resultGPU, CL_TRUE, 0, img.total() * sizeof(uchar), resultCPU->data, 0, NULL, NULL);
+
+    if ( err != CL_SUCCESS ) {
+        printf("Error al obtener resultado del kernel\n");
+        return -1;
+    }
+
+    auto t2 = std::chrono::high_resolution_clock::now();
+
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+    std::cout << "Tiempo de ejecucion: " << (float) (duration / 1000.0) << " sec" << std::endl;
+
+    imwrite("result.png", *resultCPU);
+    std::cout << "Resultado escrito en ./result.png" << std::endl;
+
+    // --------------- FINALIZACION OPENCL ------------------
+    clReleaseMemObject(sourceGPU);
+    clReleaseMemObject(resultGPU);
+    clReleaseProgram(program);
+    clReleaseKernel(kernel);
+    clReleaseCommandQueue(commands);
+    clReleaseContext(context);
+    
+    return 0;
+}
