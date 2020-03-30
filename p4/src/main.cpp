@@ -67,9 +67,7 @@ int main(int argc, char **argv)
     cl::Program::Sources sources;
 
     int size = 0;
-    char *kernel_code = readCLSource("/home/ptondreau/Documents/pr_cn/p4/src/clProgram.cl", size);
-
-    // sources.push_back({})
+    char *kernel_code = readCLSource("src/clProgram.cl", size);
 
     sources.push_back({kernel_code, size});
 
@@ -94,25 +92,6 @@ int main(int argc, char **argv)
 
     queue.enqueueWriteBuffer(sourceGPU, CL_TRUE, 0, img.total() * sizeof(uchar), img.data);
 
-    // --------------- ESTABLECER PARAMETROS PARA OPENCL ------------------
-
-    // cl_uint num_filas = img.rows;
-    // cl_uint num_columnas = img.cols;
-    // cl_float cl_radius = radius;
-
-    // err |= clSetKernelArg(kernel, 0, sizeof(cl_mem), &sourceGPU);
-    // err |= clSetKernelArg(kernel, 1, sizeof(cl_mem), &resultGPU);
-    // err |= clSetKernelArg(kernel, 2, sizeof(cl_uint), &num_filas);
-    // err |= clSetKernelArg(kernel, 3, sizeof(cl_uint), &num_columnas);
-    // err |= clSetKernelArg(kernel, 4, sizeof(cl_float), &cl_radius);
-
-    // if ( err != CL_SUCCESS ) {
-    //     printf("Error al establecer los parametros\n");
-    //     return -1;
-    // } else {
-    //     printf("Argumentos establecidos\n");
-    // }
-
     // --------------- EJECUCION KERNEL OPENCL ------------------
 
     cl_uint dim = 1;
@@ -122,7 +101,6 @@ int main(int argc, char **argv)
     std::cout << "Ejecutando filtro Gaussiano..." << std::endl;
 
     auto t1 = std::chrono::high_resolution_clock::now();
-    // err = clEnqueueNDRangeKernel(commands, kernel, dim, NULL, &global, &local, 0, NULL, NULL);
     
     cl::Kernel kernel_gauss = cl::Kernel(program, "gaussBlur");
     kernel_gauss.setArg(0, sourceGPU);

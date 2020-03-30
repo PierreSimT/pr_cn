@@ -2,8 +2,6 @@ kernel void gaussBlur(global uchar *src, global uchar *result, int filas, int co
 
     int i = get_global_id(0);
 
-    //printf("Procesando fila %d \n", i);
-
     float rs = ceil(radius * 2.57);
     if ( i < filas ) {
         for (int j = 0; j < columnas; j++) {       
