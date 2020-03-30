@@ -52,6 +52,11 @@ int main(int argc, char **argv)
     uchar * src;
     uchar * result;
 
+    cudaDeviceProp  prop;
+
+    cudaGetDeviceProperties(&prop, 0);
+    printf( "Usando dispositivo CUDA:  %s\n", prop.name );
+
     // PREPARAR DATOS CUDA
     cudaMalloc(&src, img.total() * sizeof(uchar));
     cudaMalloc(&result, img.total() * sizeof(uchar));
