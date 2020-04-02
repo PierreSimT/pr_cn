@@ -6,13 +6,15 @@
 
 using namespace cv;
 
-Mat gaussBlur(Mat source, float radius)
+Mat gaussBlur(Mat source, float radius, int threads)
 {
     int columnas = source.cols;
     int filas = source.rows;
     Mat result;
     result.create(filas, columnas, CV_8UC1);
     double rs = ceil(radius * 2.57);
+
+    omp_set_num_threads(threads);
 
 #pragma omp parallel for shared(source, result, columnas, filas, rs)
     for (int i = 0; i < filas; i++)
@@ -44,20 +46,20 @@ Mat gaussBlur(Mat source, float radius)
 
 int main(int argc, char **argv)
 {
-    if (argc != 3)
+    if (argc != 4)
     {
-        printf("uso: a.out <Image_Path> <Gauss_Radius>\n");
+        printf("uso: a.out <Image_Path> <Gauss_Radius> <num_hilos>\n");
         return -1;
     }
 
     Mat img = imread(argv[1], IMREAD_GRAYSCALE);
 
     auto t1 = std::chrono::high_resolution_clock::now();
-    Mat result = gaussBlur(img, atof(argv[2]));
+    Mat result = gaussBlur(img, atof(argv[2]), atoi(argv[3]));
     auto t2 = std::chrono::high_resolution_clock::now();
 
-    auto duration = std::chrono::duration_cast<std::chrono::seconds>(t2 - t1).count();
-    std::cout << "Tiempo de ejecucion: " << duration << " sec" << std::endl;
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+    std::cout << "Tiempo de ejecucion: " << (float) (duration / 1000.0) << " sec" << std::endl;
 
     imwrite("result.png", result);
     std::cout << "Resultado escrito en ./result.png" << std::endl;
