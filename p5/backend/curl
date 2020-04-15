@@ -1,0 +1,11 @@
+CURL CREAR ALGORITMO
+
+curl -X PUT "http://localhost:3000/api/algorithm/test?parameters=param1,img&parameters=param2,number&parameters=param3,text"
+
+CURL CREAR ARCHIVO FUENTE
+
+curl -X PUT http://localhost:3000/api/algorithm/test/source/main.cpp -T 
+
+CURL CREAR MAKEFILE 
+
+curl -X PUT http://localhost:3000/api/algorithm/test/makefile -T 
