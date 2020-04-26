@@ -1,32 +1,26 @@
 import React, { useEffect, useState } from 'react'
 import axios from 'axios';
 
-import { Algorithm } from '../common';
+import { Service } from '../common';
+import { RouteComponentProps } from "@reach/router"
 import { Container, ListGroup, Jumbotron } from 'react-bootstrap';
+import RunServiceForm from '../LoadAlgorithm/RunServiceForm';
 
-interface Props {
-
+type Props = {
+    algorithms: Service[];
+    handleClick: (event: Service) => void;
 }
 
 const List = (props: Props) => {
 
-    const [algorithms, setAlgorithms] = useState<Algorithm[]>([]);
     let algorithmList: JSX.Element[] = [];
-
-    useEffect(() => {
-        axios.get('http://localhost:4000/api/get/service/all')
-            .then(res => {
-                console.log(res);
-                setAlgorithms(res.data);
-            })
-    }, [])
 
     console.log(algorithmList);
 
-    algorithmList = algorithms.map((value: Algorithm, idx: number) => {
+    algorithmList = props.algorithms.map((value: Service, idx: number) => {
         console.log(value);
         return (
-            <ListGroup.Item key={idx} action>
+            <ListGroup.Item key={idx} onClick={(event: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => props.handleClick(value)} action>
                 {value.name}
             </ListGroup.Item>
         );

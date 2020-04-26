@@ -1,24 +1,34 @@
 import React, { FormEvent } from 'react'
 
-import { Form, Button, Container, Col } from 'react-bootstrap';
+import { Form, Button, Container, Col, Modal } from 'react-bootstrap';
 import ParameterForm from './ParameterForm/ParameterForm';
 import FileInput from '../Inputs/FileInput';
 import { Parameter } from '../common';
 import TextInput from '../Inputs/TextInput';
 
+import { RouteComponentProps, useNavigate } from "@reach/router";
+
 import axios from 'axios';
+import ModalResult from '../Modal/ModalResult';
 
 type Props = {
 
 }
 
-const AlgorithmForm: React.FC<Props> = props => {
+const AlgorithmForm: React.FC<RouteComponentProps> = props => {
 
+    const navigate = useNavigate();
     const [numParameters, setNumParameters] = React.useState(0);
     const [selectedParameters, setSelectedParameters] = React.useState<Parameter[]>([]);
     const [serviceName, setServiceName] = React.useState<string>('');
     const [makefile, setMakefile] = React.useState<any>();
     const [sourceFile, setSourceFile] = React.useState<any>();
+
+    const [show, setShow] = React.useState<boolean>(false);
+    const [responseData, setResponse] = React.useState<string>('');
+
+    let parameterForms: JSX.Element[] = [];
+    let modal_result: JSX.Element = <div></div>;
 
     const handleClick = () => {
         const newNumParameters = numParameters + 1;
@@ -79,7 +89,12 @@ const AlgorithmForm: React.FC<Props> = props => {
 
     }
 
+    const handleClose = () => {
+        navigate('/', { replace: true });
+    }
+
     const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
         console.log(event.target);
         console.log(serviceName);
         console.log(selectedParameters);
@@ -100,8 +115,6 @@ const AlgorithmForm: React.FC<Props> = props => {
                     parameters: paramString
                 }
             }).then(res => {
-                console.log(res);
-
                 // SUBE EL MAKEFILE
                 axios.put('http://localhost:4000/api/put/service/' + serviceName + '/makefile', makefile,
                     {
@@ -109,8 +122,6 @@ const AlgorithmForm: React.FC<Props> = props => {
                             'Content-Type': makefile.type
                         }
                     }).then(res => {
-                        console.log(res);
-
                         // SUBE EL ARCHIVO FUENTE
                         axios.put('http://localhost:4000/api/put/service/' + serviceName + '/source/' + sourceFile.name, sourceFile,
                             {
@@ -118,14 +129,17 @@ const AlgorithmForm: React.FC<Props> = props => {
                                     'Content-Type': sourceFile.type
                                 }
                             }).then(res => {
-                                console.log(res);
+                                // COMPILA EL SERVICIO
+                                axios.post('http://localhost:4000/api/post/compile/' + serviceName).then(res => {
+                                    console.log(res);
+                                    setResponse(res.data.Result)
+                                    setShow(true);
+                                })
                             })
 
                     })
             })
     }
-
-    let parameterForms: JSX.Element[] = [];
 
     for (var i: number = 0; i < numParameters; i++) {
         parameterForms.push(
@@ -137,33 +151,42 @@ const AlgorithmForm: React.FC<Props> = props => {
         );
     }
 
+    modal_result = (
+        <ModalResult title="Upload Complete" message={responseData} handleClose={handleClose} show={show} />
+    );
+
     return (
-        <Container>
-            <Form onSubmit={handleSubmit}>
-                <Form.Group controlId="formServiceName">
-                    <TextInput label="Service Name" handleTextChange={handleServiceName} />
-                </Form.Group>
+        <>
+            {modal_result}
 
-                <Form.Row>
-                    <Col>
-                        <FileInput id="makefile" handleChange={handleFileChange} label="Makefile" />
-                    </Col>
-                    <Col>
-                        <FileInput id="source" handleChange={handleFileChange} label="Source" />
-                    </Col>
-                </Form.Row>
-                <br />
+            < Container >
 
-                {parameterForms}
+                <Form onSubmit={handleSubmit}>
+                    <Form.Group controlId="formServiceName">
+                        <TextInput label="Service Name" handleTextChange={handleServiceName} />
+                    </Form.Group>
 
-                <Button variant="outline-secondary" onClick={handleClick}>Add Parameter</Button>
-                <br />
-                <br />
-                <Button variant="primary" type="submit">
-                    Submit
+                    <Form.Row>
+                        <Col>
+                            <FileInput id="makefile" handleChange={handleFileChange} label="Makefile" />
+                        </Col>
+                        <Col>
+                            <FileInput id="source" handleChange={handleFileChange} label="Source" />
+                        </Col>
+                    </Form.Row>
+                    <br />
+
+                    {parameterForms}
+
+                    <Button variant="outline-secondary" onClick={handleClick}>Add Parameter</Button>
+                    <br />
+                    <br />
+                    <Button variant="primary" type="submit">
+                        Submit
                 </Button>
-            </Form>
-        </Container>
+                </Form>
+            </Container >
+        </>
     )
 }
 

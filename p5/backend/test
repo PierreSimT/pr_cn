@@ -1,1 +1,0 @@
-"{\n   \"algorithm\": \"test\",\n   \"parameters\": [\n      {\n         \"name\": \"param1\",\n         \"type\": \"img\"\n      },\n      {\n         \"name\": \"param2\",\n         \"type\": \"number\"\n      },\n      {\n         \"name\": \"param3\",\n         \"type\": \"text\"\n      }\n   ],\n   \"results\": []\n}"
