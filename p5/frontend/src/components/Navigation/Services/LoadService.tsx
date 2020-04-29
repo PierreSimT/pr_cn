@@ -1,16 +1,11 @@
 import React, { useState, useEffect } from 'react'
-import List from '../List/List'
-import { ListGroup } from 'react-bootstrap';
-import { Service, BACKEND_URL } from '../common';
+import List from '../../List/List'
+import { Service } from '../../common';
 
 
 import axios from 'axios';
-import RunServiceForm from '../LoadAlgorithm/RunServiceForm';
+import RunServiceForm from '../../Services/RunService/RunServiceForm';
 import { RouteComponentProps } from '@reach/router';
-
-interface Props {
-
-}
 
 const LoadService = (props: RouteComponentProps) => {
 
@@ -19,7 +14,7 @@ const LoadService = (props: RouteComponentProps) => {
     const [selected, setSelected] = useState<boolean>(false);
 
     useEffect(() => {
-        axios.get(`${BACKEND_URL}/get/service/all`)
+        axios.get(`/api/get/service/all`)
             .then(res => {
                 console.log(res);
                 setAlgorithms(res.data);
@@ -27,7 +22,6 @@ const LoadService = (props: RouteComponentProps) => {
     }, [])
 
     const handleCLick = (event: Service) => {
-        let newSelectedService = event;
 
         setSelectedAlgorithm(event);
         setSelected(true);
@@ -35,6 +29,7 @@ const LoadService = (props: RouteComponentProps) => {
 
     return (
         <div>
+            <br />
             <List algorithms={algorithms} handleClick={handleCLick} />
             {selected ?
                 <RunServiceForm selectedService={selectedAlgorithm!} /> : <div></div>

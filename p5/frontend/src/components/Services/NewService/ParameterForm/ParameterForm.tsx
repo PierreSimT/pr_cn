@@ -1,6 +1,6 @@
 import React from 'react'
 import { Form, Col } from 'react-bootstrap'
-import TextInput from '../../Inputs/TextInput'
+import TextInput from '../../../Inputs/TextInput'
 
 type Props = {
     id: number;

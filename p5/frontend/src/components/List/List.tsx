@@ -1,10 +1,7 @@
-import React, { useEffect, useState } from 'react'
-import axios from 'axios';
+import React, {  } from 'react'
 
 import { Service } from '../common';
-import { RouteComponentProps } from "@reach/router"
-import { Container, ListGroup, Jumbotron } from 'react-bootstrap';
-import RunServiceForm from '../LoadAlgorithm/RunServiceForm';
+import { Jumbotron, CardDeck, Card } from 'react-bootstrap';
 
 type Props = {
     algorithms: Service[];
@@ -20,21 +17,25 @@ const List = (props: Props) => {
     algorithmList = props.algorithms.map((value: Service, idx: number) => {
         console.log(value);
         return (
-            <ListGroup.Item key={idx} onClick={(event: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => props.handleClick(value)} action>
-                {value.name}
-            </ListGroup.Item>
+            <Card key={idx}>
+                <Card.Body>
+                    <Card.Title>{value.name}</Card.Title>
+                    <Card.Text>
+                        <p>{value.description}</p>
+                    </Card.Text>
+                    <Card.Link href="#" onClick={() => props.handleClick(value)}>Select</Card.Link>
+                </Card.Body>
+            </Card>
         );
     })
 
     return (
-        <Container>
             <Jumbotron>
-                <h2>Algoritmos almacenados</h2>
-                <ListGroup>
+                <h2>Saved Services</h2>
+                <CardDeck>
                     {algorithmList}
-                </ListGroup>
+                </CardDeck>
             </Jumbotron>
-        </Container>
     )
 }
 

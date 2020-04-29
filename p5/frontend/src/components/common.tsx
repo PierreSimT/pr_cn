@@ -16,6 +16,7 @@ export interface Result {
 
 export interface Service {
     name: string,
+    description: string,
     parameters: Parameter[],
     results: Result[]
 }

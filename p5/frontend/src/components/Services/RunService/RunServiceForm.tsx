@@ -1,14 +1,14 @@
 import React, { useState } from 'react'
-import { RouteComponentProps, useNavigate } from "@reach/router"
-import { Service, Parameter, Result, BACKEND_URL } from '../common'
+import { useNavigate } from "@reach/router"
+import { Service, Result } from '../../common'
 import { Container, Form, Button, Col, Image } from 'react-bootstrap'
-import FileInput from '../Inputs/FileInput'
-import TextInput from '../Inputs/TextInput'
-import NumberInput from '../Inputs/NumberInput'
+import FileInput from '../../Inputs/FileInput'
+import TextInput from '../../Inputs/TextInput'
+import NumberInput from '../../Inputs/NumberInput'
 
 import axios from 'axios';
-import ModalResult from '../Modal/ModalResult'
-import ModalResultImage from '../Modal/ModalResultImage'
+import ModalResultImage from '../../Modal/ModalResultImage'
+import FormError from '../FormError'
 
 interface ParameterInput {
     name: string,
@@ -28,6 +28,8 @@ const RunServiceForm = (props: Props) => {
     const [imageFile, setImageFile] = useState<string | null>();
     const [receivedResult, setResult] = useState<Result>();
     const [showResult, setShowResult] = useState<boolean>(false);
+    const [showError, setShowError] = useState<boolean>(false);
+    const [errorMessage, setErrorMessage] = useState<string>('');
 
     const handleTextChange = (event: any) => {
 
@@ -79,9 +81,12 @@ const RunServiceForm = (props: Props) => {
             }
         }
 
-        axios.post(`${BACKEND_URL}/post/${props.selectedService.name}`, bodyFormData).then((res) => {
+        axios.post(`/api/post/${props.selectedService.name}`, bodyFormData).then((res) => {
             setResult(res.data);
             setShowResult(true);
+        }, err => {
+            setErrorMessage(err.data);
+            setShowError(true);
         });
 
     }
@@ -128,19 +133,24 @@ const RunServiceForm = (props: Props) => {
     var modal_result: JSX.Element = (
         <ModalResultImage title="Result"
             message={receivedResult?.result.console as string}
-            image={`${BACKEND_URL}/get/${props.selectedService.name}/result/${receivedResult?.result.file}`}
-            show={true} handleClose={handleClose} />
+            image={`/api/get/${props.selectedService.name}/result/${receivedResult?.result.file}`}
+            show={showResult} handleClose={handleClose} />
+    );
+
+    var form_error: JSX.Element = (
+        <FormError handleClose={() => setShowError(false)} message={errorMessage} />
     );
 
     return (
         <div>
 
-            {showResult ? modal_result : <div></div>}
+            {modal_result}
 
             <Container>
+                {showError ? form_error : <div></div>}
                 <Form onSubmit={handleSubmit}>
                     <Form.Group controlId="formAlgorithmName">
-                        <Form.Label>Algorithm Name</Form.Label>
+                        <Form.Label>Service Name</Form.Label>
                         <Form.Control type="text" value={props.selectedService.name} readOnly={true} />
                     </Form.Group>
 
@@ -153,7 +163,7 @@ const RunServiceForm = (props: Props) => {
                     </Form.Row>
 
                     <br></br>
-                    <Button variant="primary" type="submit">
+                    <Button variant="primary" type="submit" style={{ float: 'right' }}>
                         Submit
                     </Button>
                 </Form>

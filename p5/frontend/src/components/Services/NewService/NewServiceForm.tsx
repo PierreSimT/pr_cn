@@ -1,28 +1,30 @@
-import React, { FormEvent } from 'react'
+import React from 'react'
 
-import { Form, Button, Container, Col, Modal } from 'react-bootstrap';
+import { Form, Button, Container, Col } from 'react-bootstrap';
 import ParameterForm from './ParameterForm/ParameterForm';
-import FileInput from '../Inputs/FileInput';
-import { Parameter } from '../common';
-import TextInput from '../Inputs/TextInput';
+import FileInput from '../../Inputs/FileInput';
+import { Parameter } from '../../common';
+import TextInput from '../../Inputs/TextInput';
 
 import { RouteComponentProps, useNavigate } from "@reach/router";
 
 import axios from 'axios';
-import ModalResult from '../Modal/ModalResult';
+import ModalResult from '../../Modal/ModalResult';
+import FormError from '../FormError';
 
-type Props = {
 
-}
-
-const AlgorithmForm: React.FC<RouteComponentProps> = props => {
+const NewServiceForm: React.FC<RouteComponentProps> = () => {
 
     const navigate = useNavigate();
     const [numParameters, setNumParameters] = React.useState(0);
     const [selectedParameters, setSelectedParameters] = React.useState<Parameter[]>([]);
     const [serviceName, setServiceName] = React.useState<string>('');
+    const [serviceDescription, setServiceDescription] = React.useState<string>('');
     const [makefile, setMakefile] = React.useState<any>();
     const [sourceFile, setSourceFile] = React.useState<any>();
+
+    const [errorMessage, setErrorMessage] = React.useState<string>('');
+    const [showError, setShowError] = React.useState<boolean>(false)
 
     const [show, setShow] = React.useState<boolean>(false);
     const [responseData, setResponse] = React.useState<string>('');
@@ -30,7 +32,7 @@ const AlgorithmForm: React.FC<RouteComponentProps> = props => {
     let parameterForms: JSX.Element[] = [];
     let modal_result: JSX.Element = <div></div>;
 
-    const handleClick = () => {
+    const handleAdd = () => {
         const newNumParameters = numParameters + 1;
         const newSelectedParameters = [...selectedParameters];
 
@@ -45,10 +47,26 @@ const AlgorithmForm: React.FC<RouteComponentProps> = props => {
         setNumParameters(newNumParameters);
     }
 
+    const handleDelete = () => {
+        if (numParameters !== 0) {
+            const newNumParameters = numParameters - 1;
+            const newSelectedParameters = [...selectedParameters];
+
+            newSelectedParameters.pop();
+
+            setSelectedParameters(newSelectedParameters);
+            setNumParameters(newNumParameters);
+        }
+    }
+
     const handleServiceName = (event: any) => {
-        //console.log(event.value);
         const newServiceName = event.value;
         setServiceName(newServiceName);
+    }
+
+    const handleDescription = (event: any) => {
+        const newDescription = event.value;
+        setServiceDescription(newDescription);
     }
 
     const handleTextChange = (event: any) => {
@@ -74,7 +92,7 @@ const AlgorithmForm: React.FC<RouteComponentProps> = props => {
     }
 
     const handleFileChange = (event: EventTarget & HTMLInputElement) => {
-        console.log(event);
+        // console.log(event);
 
         const file: File = event.files![0];
 
@@ -95,11 +113,11 @@ const AlgorithmForm: React.FC<RouteComponentProps> = props => {
 
     const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        console.log(event.target);
-        console.log(serviceName);
-        console.log(selectedParameters);
-        console.log(makefile);
-        console.log(sourceFile);
+        // console.log(event.target);
+        // console.log(serviceName);
+        // console.log(selectedParameters);
+        // console.log(makefile);
+        // console.log(sourceFile);
 
         let paramString: string[] = selectedParameters.map((value: Parameter) => {
             return value.name + ',' + value.type;
@@ -109,28 +127,29 @@ const AlgorithmForm: React.FC<RouteComponentProps> = props => {
 
 
         // CREA EL SERVICIO
-        axios.put('http://localhost:4000/api/put/service/' + serviceName, null,
+        axios.put('/api/put/service/' + serviceName, null,
             {
                 params: {
-                    parameters: paramString
+                    parameters: paramString,
+                    description: serviceDescription,
                 }
-            }).then(res => {
+            }).then(() => {
                 // SUBE EL MAKEFILE
-                axios.put('http://localhost:4000/api/put/service/' + serviceName + '/makefile', makefile,
+                axios.put('/api/put/service/' + serviceName + '/makefile', makefile,
                     {
                         headers: {
                             'Content-Type': makefile.type
                         }
-                    }).then(res => {
+                    }).then(() => {
                         // SUBE EL ARCHIVO FUENTE
-                        axios.put('http://localhost:4000/api/put/service/' + serviceName + '/source/' + sourceFile.name, sourceFile,
+                        axios.put('/api/put/service/' + serviceName + '/source/' + sourceFile.name, sourceFile,
                             {
                                 headers: {
                                     'Content-Type': sourceFile.type
                                 }
-                            }).then(res => {
+                            }).then(() => {
                                 // COMPILA EL SERVICIO
-                                axios.post('http://localhost:4000/api/post/compile/' + serviceName).then(res => {
+                                axios.post('/api/post/compile/' + serviceName).then(res => {
                                     console.log(res);
                                     setResponse(res.data.Result)
                                     setShow(true);
@@ -138,6 +157,9 @@ const AlgorithmForm: React.FC<RouteComponentProps> = props => {
                             })
 
                     })
+            }, err => {
+                setErrorMessage(err);
+                setShowError(true);
             })
     }
 
@@ -155,15 +177,24 @@ const AlgorithmForm: React.FC<RouteComponentProps> = props => {
         <ModalResult title="Upload Complete" message={responseData} handleClose={handleClose} show={show} />
     );
 
+    var form_error: JSX.Element = (
+        <FormError handleClose={() => setShowError(false)} message={errorMessage} />
+    );
+
     return (
         <>
             {modal_result}
 
             < Container >
-
+                {showError ? form_error : <div></div>}
                 <Form onSubmit={handleSubmit}>
                     <Form.Group controlId="formServiceName">
                         <TextInput label="Service Name" handleTextChange={handleServiceName} />
+                    </Form.Group>
+
+                    <Form.Group controlId="formServiceDescription">
+                        <Form.Label>Description</Form.Label>
+                        <Form.Control as="textarea" rows="3" onChange={(event: React.FormEvent) => handleDescription(event.currentTarget)} />
                     </Form.Group>
 
                     <Form.Row>
@@ -178,7 +209,9 @@ const AlgorithmForm: React.FC<RouteComponentProps> = props => {
 
                     {parameterForms}
 
-                    <Button variant="outline-secondary" onClick={handleClick}>Add Parameter</Button>
+                    <Button variant="outline-danger" onClick={handleDelete}>Delete Parameter</Button>
+                    {" "}
+                    <Button variant="outline-success" onClick={handleAdd}>Add Parameter</Button>
                     <br />
                     <br />
                     <Button variant="primary" type="submit">
@@ -190,4 +223,4 @@ const AlgorithmForm: React.FC<RouteComponentProps> = props => {
     )
 }
 
-export default AlgorithmForm
+export default NewServiceForm

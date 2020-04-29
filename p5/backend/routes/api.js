@@ -10,13 +10,18 @@ var Service = require('../models/service');
 const path_makefiles = process.cwd() + '/uploads/services/';
 const base_remote_path = '/home/ptondreau/Documents/services';
 
+var jwt = require('jsonwebtoken');
+var passport = require('passport');
+
+const User = require('../models/user');
+
 var router = express.Router();
 var ssh = new node_ssh();
 
 var ssh_config = {
-    host: 'HOST',
-    username: 'USERNAME',
-    privateKey: 'PRIVATE_KEY'
+    host: '192.168.1.108',
+    username: 'ptondreau',
+    privateKey: '/home/ptondreau/.ssh/id_rsa'
 };
 
 router.use(upload());
@@ -251,25 +256,39 @@ router.get('/get/service/all', async (req, res, next) => {
  */
 router.post('/post/compile/:service', async (req, res, next) => {
 
-    const name = req.params.service;
+    passport.authenticate('jwt', { session: false }, async (err, user, info) => {
 
-    try {
-        await ssh.connect(ssh_config);
+        if (err)
+            console.log(err);
+        if (info != undefined) {
+            console.log(info.message);
+            res.json({ Error: info.message });
+        } else {
+            if (user) {
+                const name = req.params.service;
+
+                try {
+                    await ssh.connect(ssh_config);
 
 
-        let result_compile = await ssh.exec('make', ['build'],
-            {
-                cwd: `${base_remote_path}/${name}/`,
-                stream: 'stdout',
-                options: { pty: true }
-            });
+                    let result_compile = await ssh.exec('make', ['build'],
+                        {
+                            cwd: `${base_remote_path}/${name}/`,
+                            stream: 'stdout',
+                            options: { pty: true }
+                        });
 
-        res.status(200).json({ Result: result_compile });
-    } catch (err) {
-        console.log(err);
-        res.status(500).json({ Error: err.message });
-    }
+                    res.status(200).json({ Result: result_compile });
+                } catch (err) {
+                    console.log(err);
+                    res.status(500).json({ Error: err.message });
+                }
+            } else {
+                res.status(401).json({ Error: "Unauthorized" });
+            }
 
+        }
+    })(req, res, next);
 })
 
 /**
@@ -284,7 +303,6 @@ router.post('/post/:service', async (req, res, next) => {
     const timestamp = Date.now();
 
     console.log(input_parameters);
-    console.log(req.files['imagen']);
 
     try {
         Service.findOne({ name: name }, async (err, doc) => {
@@ -387,68 +405,95 @@ router.post('/post/:service', async (req, res, next) => {
  */
 router.put('/put/service/:service', async (req, res, next) => {
 
-    if (req.query.parameters) {
-        console.log(req.params.service);
+    passport.authenticate('jwt', { session: false }, async (err, user, info) => {
 
-        const service = req.params.service;
-        const values = req.query.parameters;
+        if (err)
+            console.log(err);
+        if (info != undefined) {
+            console.log(info.message);
+            res.json({ Error: info.message });
+        } else {
+            console.log(user);
+            if (user) {
+                if (req.query.parameters) {
+                    console.log(req.params.service);
 
-        try {
+                    const service = req.params.service;
+                    const description = req.query.description;
+                    const values = req.query.parameters;
 
-            const parameters = values.map(value => {
-                var arr = value.split(',');
-                if (arr.length > 2)
-                    throw Error("Parameters wrongly formated");
+                    try {
 
-                return { 'name': arr[0], 'type': arr[1] };
-            })
+                        const parameters = values.map(value => {
+                            var arr = value.split(',');
+                            if (arr.length > 2)
+                                throw Error("Parameters wrongly formated");
+
+                            return { 'name': arr[0], 'type': arr[1] };
+                        })
 
 
-            console.log(parameters);
+                        console.log(parameters);
 
-            let path = path_makefiles + service + '/';
+                        let path = path_makefiles + service + '/';
 
-            var query = Service.where({ name: service });
+                        var query = Service.where({ name: service });
 
-            query.findOne(async (err, document) => {
+                        query.findOne(async (err, document) => {
 
-                if (document) {
+                            if (document) {
 
-                    console.log(document);
-                    res.status(304).send({ DocumentExists: "The specified service already exists" });
+                                console.log(document);
+                                res.status(304).send({ DocumentExists: "The specified service already exists" });
 
+                            } else {
+
+                                await ssh.connect(ssh_config);
+
+                                try {
+                                    await mkdir(path)
+                                    await mkdir(path + 'assets')
+                                    await mkdir(path + 'results')
+                                } catch (err) {
+                                    console.log(err.message);
+                                    res.status(500).json({Error: err.message});
+                                }
+
+                                try {
+                                    await createRemoteDir(service)
+                                    await createRemoteDir(`${service}/assets`)
+                                    await createRemoteDir(`${service}/results`)
+                                } catch (err) {
+                                    console.log(err.message);
+                                    res.status(500).json({Error: err.message});
+                                }
+
+                                var alg = new Service({
+                                    name: service,
+                                    description: description,
+                                    path: path,
+                                    parameters: parameters,
+                                })
+
+
+                                await alg.save();
+
+                                res.status(204).send();
+                            }
+                        })
+
+                    } catch (err) {
+                        console.log(err.message);
+                        res.status(500).send({ Error: err.message });
+                    }
                 } else {
-
-                    await ssh.connect(ssh_config);
-
-                    var alg = new Service({
-                        name: service,
-                        path: path,
-                        parameters: parameters,
-                    })
-
-
-                    await alg.save();
-
-                    await mkdir(path)
-                    await mkdir(path + 'assets')
-                    await mkdir(path + 'results')
-
-                    await createRemoteDir(service)
-                    await createRemoteDir(`${service}/assets`)
-                    await createRemoteDir(`${service}/results`)
-
-                    res.status(204).send();
+                    res.status(400).send({ Error: "No parameters specified" });
                 }
-            })
-
-        } catch (err) {
-            console.log(err.message);
-            res.status(500).send({ Error: err.message });
+            } else {
+                res.status(401).json({ Error: "Unauthorized" });
+            }
         }
-    } else {
-        res.status(400).send({ Error: "No parameters specified" });
-    }
+    })(req, res, next);
 })
 
 /** 
@@ -456,20 +501,35 @@ router.put('/put/service/:service', async (req, res, next) => {
  */
 router.put('/put/service/:service/source/:filename', async (req, res, next) => {
 
-    const service = req.params.service;
-    const filename = req.params.filename;
+    passport.authenticate('jwt', { session: false }, async (err, user, info) => {
 
-    let path = path_makefiles + service + '/' + filename;
+        if (err)
+            console.log(err);
+        if (info != undefined) {
+            console.log(info.message);
+            res.json({ Error: info.message });
+        } else {
 
-    try {
-        await ssh.connect(ssh_config);
-        await pipeStream(req, createWriteStream(path));
-        await ssh.putFile(path, `${base_remote_path}/${service}/${filename}`)
-        res.status(200).send();
-    } catch (err) {
-        console.log(err);
-        res.status(500).send();
-    }
+            if (user) {
+                const service = req.params.service;
+                const filename = req.params.filename;
+
+                let path = path_makefiles + service + '/' + filename;
+
+                try {
+                    await ssh.connect(ssh_config);
+                    await pipeStream(req, createWriteStream(path));
+                    await ssh.putFile(path, `${base_remote_path}/${service}/${filename}`)
+                    res.status(200).send();
+                } catch (err) {
+                    console.log(err);
+                    res.status(500).send();
+                }
+            } else {
+                res.status(401).json({ Error: "Unauthorized" });
+            }
+        }
+    })(req, res, next);
 })
 
 /** 
@@ -477,19 +537,35 @@ router.put('/put/service/:service/source/:filename', async (req, res, next) => {
  */
 router.put('/put/service/:service/makefile', async (req, res, next) => {
 
-    const service = req.params.service;
+    passport.authenticate('jwt', { session: false }, async (err, user, info) => {
 
-    let path = path_makefiles + service + '/Makefile';
+        if (err)
+            console.log(err);
+        if (info != undefined) {
+            console.log(info.message);
+            res.json({ Error: info.message });
+        } else {
 
-    try {
-        await ssh.connect(ssh_config);
-        await pipeStream(req, createWriteStream(path));
-        await ssh.putFile(path, `${base_remote_path}/${service}/Makefile`)
-        res.status(200).send();
-    } catch (err) {
-        console.log(err);
-        res.status(500).send();
-    }
+            if (user) {
+                const service = req.params.service;
+
+                let path = path_makefiles + service + '/Makefile';
+
+                try {
+                    await ssh.connect(ssh_config);
+                    await pipeStream(req, createWriteStream(path));
+                    await ssh.putFile(path, `${base_remote_path}/${service}/Makefile`)
+                    res.status(200).send();
+                } catch (err) {
+                    console.log(err);
+                    res.status(500).send();
+                }
+            } else {
+                res.status(401).json({ Error: "Unauthorized" });
+            }
+        }
+
+    })(req, res, next);
 })
 
 /**

@@ -1,16 +1,10 @@
 import React, { useState, useEffect } from 'react'
-import { Service, Result, BACKEND_URL } from '../common';
-import List from '../List/List';
-import RunServiceForm from '../LoadAlgorithm/RunServiceForm';
+import { Service, Result } from '../../common';
+import List from '../../List/List';
 
 import axios from 'axios';
-import ResultList from '../List/ResultList';
+import ResultList from '../../List/ResultList';
 import { RouteComponentProps } from '@reach/router';
-
-
-interface Props {
-
-}
 
 const ResultsService = (props: RouteComponentProps) => {
     const [algorithms, setAlgorithms] = useState<Service[]>([]);
@@ -19,7 +13,7 @@ const ResultsService = (props: RouteComponentProps) => {
     const [selected, setSelected] = useState<boolean>(false);
 
     useEffect(() => {
-        axios.get(`${BACKEND_URL}/get/service/all`)
+        axios.get(`/api/get/service/all`)
             .then(res => {
                 console.log(res);
                 setAlgorithms(res.data);
@@ -27,8 +21,6 @@ const ResultsService = (props: RouteComponentProps) => {
     }, [])
 
     const handleCLick = (event: Service) => {
-        let newSelectedService = event;
-
         console.log(event);
         setServiceResults(event.results);
         setSelectedAlgorithm(event);
@@ -39,6 +31,7 @@ const ResultsService = (props: RouteComponentProps) => {
 
     return (
         <div>
+            <br />
             <List algorithms={algorithms} handleClick={handleCLick} />
             {selected ?
                 <ResultList serviceName={selectedAlgorithm!.name} results={selectedAlgorithm?.results!} /> : <div></div>

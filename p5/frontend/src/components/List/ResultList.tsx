@@ -1,6 +1,6 @@
 import React from 'react'
-import { Service, Result, BACKEND_URL } from '../common';
-import { ListGroup, Container, Jumbotron, Table } from 'react-bootstrap';
+import { Result } from '../common';
+import { Container, Table } from 'react-bootstrap';
 
 type Props = {
     serviceName: string;
@@ -26,8 +26,8 @@ const ResultList = (props: Props) => {
 
 
             let resultFile: string;
-            if (value.result.file != '') {
-                resultFile = `${BACKEND_URL}/get/${props.serviceName}/result/${value.result.file}`
+            if (value.result.file !== '') {
+                resultFile = `/api/get/${props.serviceName}/result/${value.result.file}`
             } else {
                 resultFile = 'N/A'
             }
