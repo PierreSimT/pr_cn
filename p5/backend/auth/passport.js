@@ -40,16 +40,16 @@ passport.use('register', new localStrategy({
     }
 }));
 
-const cookieExtractor = (req) => {
-    var token = null;
-    if (req && req.cookies) {
-        token = req.cookies.jwt;
-    }
-    return token;
-}
+// const cookieExtractor = (req) => {
+//     var token = null;
+//     if (req && req.cookies) {
+//         token = req.cookies.jwt;
+//     }
+//     return token;
+// }
 
 const opts = {
-    jwtFromRequest: extractJWT.fromExtractors([cookieExtractor]),
+    jwtFromRequest: extractJWT.fromAuthHeaderAsBearerToken(),
     secretOrKey: jwtSecret,
 }
 

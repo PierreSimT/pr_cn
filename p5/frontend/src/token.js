@@ -1,0 +1,1 @@
+export const jwtToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImFkbWluIiwiaWF0IjoxNTg4Njk2NzIzfQ.utqeCdXX04GqwUoEW7wPIoO99DQYoixjuclOqMeCK4Q";

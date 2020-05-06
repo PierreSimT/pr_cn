@@ -19,7 +19,7 @@ var router = express.Router();
 var ssh = new node_ssh();
 
 var ssh_config = {
-    host: '192.168.1.108',
+    host: '192.168.1.41',
     username: 'ptondreau',
     privateKey: '/home/ptondreau/.ssh/id_rsa'
 };
@@ -317,7 +317,7 @@ router.post('/post/:service', async (req, res, next) => {
 
                     // TODO: Antes de hacer esto comprobar si los parametros son correctos
 
-                    if (doc.parameters[param].type == 'File') {
+                    if (doc.parameters[param].type.toLowerCase() == 'file') {
                         // Preparamos la conexion SSH
                         await ssh.connect(ssh_config);
 
@@ -401,7 +401,7 @@ router.post('/post/:service', async (req, res, next) => {
 
 
 /** 
- * PUT - Crea el algoritmo en la base de datos
+ * PUT - Crea el servicio en la base de datos
  */
 router.put('/put/service/:service', async (req, res, next) => {
 
