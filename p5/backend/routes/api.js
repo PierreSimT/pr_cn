@@ -1,5 +1,6 @@
 var express = require('express');
 var upload = require('express-fileupload');
+var admzip = require('adm-zip');
 var node_ssh = require('node-ssh');
 
 const { createWriteStream } = require('fs');
@@ -8,6 +9,7 @@ const { mkdir, stat } = require('fs').promises;
 var Service = require('../models/service');
 
 const path_makefiles = process.cwd() + '/uploads/services/';
+const path_tmp = process.cwd() + '/uploads/tmp/';
 const base_remote_path = '/home/ptondreau/Documents/services';
 
 var jwt = require('jsonwebtoken');
@@ -456,7 +458,7 @@ router.put('/put/service/:service', async (req, res, next) => {
                                     await mkdir(path + 'results')
                                 } catch (err) {
                                     console.log(err.message);
-                                    res.status(500).json({Error: err.message});
+                                    res.status(500).json({ Error: err.message });
                                 }
 
                                 try {
@@ -465,7 +467,7 @@ router.put('/put/service/:service', async (req, res, next) => {
                                     await createRemoteDir(`${service}/results`)
                                 } catch (err) {
                                     console.log(err.message);
-                                    res.status(500).json({Error: err.message});
+                                    res.status(500).json({ Error: err.message });
                                 }
 
                                 var alg = new Service({
@@ -514,17 +516,57 @@ router.put('/put/service/:service/source/:filename', async (req, res, next) => {
                 const service = req.params.service;
                 const filename = req.params.filename;
 
-                let path = path_makefiles + service + '/' + filename;
+                if (filename.endsWith('.zip')) {
 
-                try {
-                    await ssh.connect(ssh_config);
-                    await pipeStream(req, createWriteStream(path));
-                    await ssh.putFile(path, `${base_remote_path}/${service}/${filename}`)
-                    res.status(200).send();
-                } catch (err) {
-                    console.log(err);
-                    res.status(500).send();
+                    let path = path_makefiles + service + '/';
+                    let path_zip = path_tmp + '/' + filename;
+
+
+                    await pipeStream(req, createWriteStream(path_zip));
+                    var zip = new admzip(path_zip);
+                    zip.extractAllTo(path);
+
+                    const failed = []
+                    const successful = []
+                    try {
+                        await ssh.connect(ssh_config);
+                        await ssh.putDirectory(path, `${base_remote_path}/${service}/`, {
+                            recursive: true,
+                            concurrency: 10,
+                            tick: function (localPath, remotePath, error) {
+                                if (error) {
+                                    failed.push(localPath)
+                                } else {
+                                    successful.push(localPath)
+                                }
+                            }
+                        })
+
+                        console.log('failed transfers', failed.join(', '))
+                        console.log('successful transfers', successful.join(', '))
+
+                        res.status(200).send();
+
+                    } catch (err) {
+                        console.log(err);
+                        res.status(500).send();
+                    }
+                    
+
+                } else {
+                    let path = path_makefiles + service + '/' + filename;
+
+                    try {
+                        await ssh.connect(ssh_config);
+                        await pipeStream(req, createWriteStream(path));
+                        await ssh.putFile(path, `${base_remote_path}/${service}/${filename}`)
+                        res.status(200).send();
+                    } catch (err) {
+                        console.log(err);
+                        res.status(500).send();
+                    }
                 }
+
             } else {
                 res.status(401).json({ Error: "Unauthorized" });
             }

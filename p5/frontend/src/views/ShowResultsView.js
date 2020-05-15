@@ -29,11 +29,13 @@ const ShowResultsView = () => {
 
     return (
         <React.Fragment>
-            <Grid container direction="column" justify="center" className={classes.heroContent}>
-                {loadedList ? <Grid item><ServiceList services={services} onServiceSelect={onServiceSelect} /></Grid> : <div></div>}
-                {openTable ? (
+            <Container>
+                <Grid container spacing={2} direction="column" justify="center" className={classes.heroContent}>
                     <Grid item>
-                        <Container>
+                        {loadedList ? <ServiceList services={services} onServiceSelect={onServiceSelect} /> : <div></div>}
+                    </Grid>
+                    {openTable ? (
+                        <Grid item>
                             <TableContainer component={Paper}>
                                 <Table className={classes.table} aria-label="resultTable">
                                     <TableHead>
@@ -58,10 +60,10 @@ const ShowResultsView = () => {
                                     </TableBody>
                                 </Table>
                             </TableContainer>
-                        </Container>
-                    </Grid>
-                ) : <div></div>}
-            </Grid>
+                        </Grid>
+                    ) : <div></div>}
+                </Grid>
+            </Container>
         </React.Fragment>
     )
 }
